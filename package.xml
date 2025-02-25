@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>hpp-bin-picking</name>
+  <version>6.0.0</version>
+  <description>Tools to solve bin-picking manipulation planning problem</description>
+
+  <maintainer email="florent.lamiraux@laas.fr">Florent Lamiraux</maintainer>
+
+  <author>Florent Lamiraux et al.</author>
+
+  <license>BSD-2</license>
+
+  <url type="website">https://github.com/florent-lamiraux/hpp-bin-picking</url>
+  <url type="repository">https://github.com/florent-lamiraux/hpp-bin-picking</url>
+  <url type="bugtracker">https://github.com/florent-lamiraux/hpp-bin-picking/issues</url>
+
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <depend>hpp-corbaserver</depend>
+  <depend>hpp-manipulation</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
