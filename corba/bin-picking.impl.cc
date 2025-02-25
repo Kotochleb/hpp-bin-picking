@@ -29,6 +29,8 @@
 #include <../corba/bin-picking.impl.hh>
 #include <../corba/bin-picking.hh>
 
+#include <pinocchio/multibody/frame.hpp>
+
 #include <hpp/pinocchio/gripper.hh>
 #include <hpp/pinocchio/liegroup-space.hh>
 
@@ -117,19 +119,30 @@ void BinPicking::addObstacleToEffector(const char* effectorName,
   }
 }
 
-CORBA::Boolean BinPicking::collisionTest(const char* name,
-      const Transform_ gripperPose, const ::hpp::floatSeq& q,
-      CORBA::String_out report)
+CORBA::Boolean BinPicking::collisionTest(const char* name, const char* handle,
+    const ::hpp::floatSeq& q, CORBA::String_out report,
+    floatSeq_out gripperAxis)
 {
   try{
-    SE3 gp(corbaServer::toTransform3f(gripperPose));
     EffectorPtr_t effector(getEffectorOrThrow(name));
+    DevicePtr_t robot(getRobotOrThrow());
+    HandlePtr_t h;
+    try{
+      h = robot->handles.get(std::string(handle));
+    }
+    catch(const std::invalid_argument& exc){
+      std::string msg(std::string("No handle with name ") +
+                      std::string(handle));
+      throw Error(msg.c_str());
+    }
     std::string collisionReport;
+    vector3_t ga;
     bool res(
-        effector->collisionTest(gp, corbaServer::floatSeqToVector(q),
-                                collisionReport)
+        effector->collisionTest(h, corbaServer::floatSeqToVector(q),
+                                collisionReport, ga)
         );
     report = CORBA::string_dup(collisionReport.c_str());
+    gripperAxis = vectorToFloatSeq(ga);
     return res;
   } catch(const std::exception &exc){
     throw Error(exc.what());
@@ -139,15 +152,35 @@ CORBA::Boolean BinPicking::collisionTest(const char* name,
 void BinPicking::discretizeHandle(const char* name, CORBA::Long nbHandles)
 {
   try {
+    typedef ::pinocchio::Frame Frame;
     DevicePtr_t robot(getRobotOrThrow());
     HandlePtr_t handle(robot->handles.get(std::string(name)));
     std::vector<HandlePtr_t> handles(::hpp::bin_picking::discretizeHandle(
                                      handle, nbHandles));
     for (HandlePtr_t h : handles) {
+      std::string jointName("universe");
+      if (h->joint()) jointName = h->joint()->name();
       robot->handles.add(h->name(), h);
+      // Add frame to pinocchio model
+      assert(robot->model().existJointName(jointName));
+      JointIndex parent(robot->model().getJointId(jointName));
+      assert(robot->model().existFrame(jointName));
+      FrameIndex previousFrame(robot->model().getFrameId(jointName));
+      robot->model().addFrame(Frame(h->name(), parent, previousFrame,
+          h->localPosition(), ::pinocchio::OP_FRAME));
     }
+    // Recreate pinocchio data after modifying model
+    robot->createData();
+    updateEffectors();
   } catch(const std::exception &exc) {
     throw Error(exc.what());
+  }
+}
+
+void BinPicking::updateEffectors()
+{
+  for (auto pair : effectors_){
+    pair.second->updateData();
   }
 }
 

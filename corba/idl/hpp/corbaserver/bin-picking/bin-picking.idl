@@ -35,10 +35,14 @@ module hpp {
   module corbaserver {
     module bin_picking {
       interface BinPicking {
-        /// Create a rigid body object containing the geometries of an end effector
+        /// \{
+        /// Effectors
+
+        /// Create a rigid object containing the geometries of an end effector
+        ///
         /// The geometries belonging to the joints that are fixed with respect
-        /// to the \link hpp::pinocchio::Gripper gripper are gathered with their
-        /// relative pose with respect to the gripper frame.
+        /// to the \link hpp::pinocchio::Gripper gripper \endlink are gathered
+	/// with their relative pose with respect to the gripper frame.
         ///
         /// \param name name of the effector that is created,
         /// \param gripperName name of the gripper,
@@ -56,16 +60,24 @@ module hpp {
             in string obstacleName, in double securityMargin) raises(Error);
         /// Test collision of an effector
         /// \param name name of the effector,
-        /// \param gripperPose pose of the gripper,
+        /// \param handle name of the handle the gripper is aligned with,
         /// \param q configuration of the system,
         /// \retval report message in case of collision,
+        /// \retval gripperAxis vector of coordinates of the x-axis of the
+        ///         gripper in the world frame.
         /// \return true if there is a collision.
         /// \note the configuration does not neet to specify all the robot
         ///       and object configurations, but only those that have been
-        ///       added as obstacle to the effector.
-        boolean collisionTest(in string name, in Transform_ gripperPose,
-                              in floatSeq q, out string report)
+        ///       added as obstacle to the effector and the one that holds the
+        ///       handle.
+        boolean collisionTest(in string name, in string handle, in floatSeq q,
+                              out string report, out floatSeq gripperAxis)
           raises(Error);
+        /// \}
+
+        /// \{
+        /// Handles
+
         /// Discretize handle
         /// Create several handles by discretizing the free axis of rotation.
         /// \param name name of the handle,
@@ -75,11 +87,10 @@ module hpp {
         ///       of freedom.
         /// \note new handles are created and added to the problem solver.
         void discretizeHandle(in string name, in long nbHandles) raises(Error);
+        /// \}
       };
     }; // interface BinPicking
   }; // module bin_picking
 }; // module hpp
 
 #endif // HPP_BIN_PICKING_CORBA_BIN_PICKING_HH
-
-
