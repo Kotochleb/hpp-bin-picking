@@ -71,3 +71,5 @@ if (CORBA)
   add_project_dependency(hpp-corbaserver)
   add_subdirectory(corba)
 endif(CORBA)
+
+install(FILES package.xml DESTINATION share/${PROJECT_NAME})
